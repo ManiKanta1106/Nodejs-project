@@ -1,0 +1,28 @@
+{
+  "name": "exam-slot-booking-system",
+  "version": "1.0.0",
+  "description": "A clean and modern exam slot booking system with Node.js backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [
+    "exam",
+    "slot-booking",
+    "nodejs",
+    "express",
+    "booking-system"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
