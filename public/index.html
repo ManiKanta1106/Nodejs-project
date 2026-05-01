@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Exam Slot Booking | Smart Scheduler</title>
+    <!-- Google Fonts + Tailwind CSS + Font Awesome (via CDN) for clean UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e9eff8 100%);
+        }
+        .card-modern {
+            backdrop-filter: blur(2px);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.15);
+        }
+        .slot-card {
+            transition: all 0.2s;
+        }
+        .slot-card:hover {
+            background-color: #f8fafc;
+            border-color: #3b82f6;
+        }
+        .toast-notify {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+            animation: slideIn 0.25s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .loading-spinner {
+            border: 2px solid rgba(59,130,246,0.2);
+            border-radius: 50%;
+            border-top: 2px solid #3b82f6;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        input:focus, select:focus {
+            outline: none;
+            ring: 2px solid #3b82f6;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <!-- Header Section with elegant branding -->
+        <div class="text-center mb-10">
+            <div class="inline-flex items-center justify-center bg-white/70 backdrop-blur-sm rounded-full px-5 py-2 shadow-sm mb-4">
+                <i class="fas fa-calendar-alt text-blue-600 mr-2 text-sm"></i>
+                <span class="text-sm font-medium text-gray-700">Exam Management System</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-slate-800 to-blue-700 bg-clip-text text-transparent">Exam Slot Booking</h1>
+            <p class="text-gray-600 mt-3 max-w-md mx-auto">Select your preferred time slot and confirm your exam seat instantly</p>
+        </div>
+
+        <!-- Main Grid: Left (Booking Form) + Right (Available Slots) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- LEFT: Student details & booking form -->
+            <div class="lg:col-span-1">
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/40 p-6 card-modern">
+                    <div class="flex items-center space-x-3 border-b border-gray-100 pb-4 mb-5">
+                        <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                            <i class="fas fa-user-graduate text-lg"></i>
+                        </div>
+                        <h2 class="text-xl font-semibold text-gray-800">Student Details</h2>
+                    </div>
+                    
+                    <form id="bookingForm" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <input type="text" id="studentName" name="name" required
+                                    class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-gray-50/50"
+                                    placeholder="e.g., Alex Johnson">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email Address <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <input type="email" id="studentEmail" name="email" required
+                                    class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-gray-50/50"
+                                    placeholder="student@example.com">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Roll Number / ID</label>
+                            <div class="relative">
+                                <i class="fas fa-id-card absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <input type="text" id="studentRoll" name="roll"
+                                    class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-transparent transition bg-gray-50/50"
+                                    placeholder="e.g., CS2024001">
+                            </div>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" id="bookBtn"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                                <i class="fas fa-calendar-check"></i> Confirm Booking
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-6 pt-4 border-t border-dashed border-gray-200 text-center text-xs text-gray-500">
+                        <i class="fas fa-shield-alt mr-1"></i> Secure reservation • Slots are confirmed instantly
+                    </div>
+                </div>
+                
+                <!-- my bookings summary card -->
+                <div class="mt-6 bg-white/60 backdrop-blur-sm rounded-xl border border-gray-200 p-4 shadow-sm">
+                    <div class="flex items-center gap-2 text-gray-700">
+                        <i class="fas fa-ticket-alt text-blue-500"></i>
+                        <h3 class="font-semibold text-sm">Your Current Bookings</h3>
+                    </div>
+                    <div id="myBookingsList" class="mt-3 text-sm space-y-2 max-h-52 overflow-y-auto">
+                        <div class="text-gray-400 italic text-center py-2">No bookings yet. Select a slot!</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RIGHT: Exam slots grid -->
+            <div class="lg:col-span-2">
+                <div class="bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl p-6 card-modern">
+                    <div class="flex flex-wrap justify-between items-center border-b border-gray-200 pb-4 mb-5">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-clock text-blue-600 text-xl"></i>
+                            <h2 class="text-xl font-semibold text-gray-800">Available Exam Slots</h2>
+                        </div>
+                        <div class="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+                            <i class="fas fa-chair mr-1"></i> Real-time availability
+                        </div>
+                    </div>
+                    
+                    <!-- Filter / exam type quick select -->
+                    <div class="mb-5 flex gap-2 overflow-x-auto pb-1">
+                        <button data-filter="all" class="filter-btn active-filter px-4 py-1.5 rounded-full text-sm font-medium transition-all bg-blue-600 text-white shadow-sm">All Slots</button>
+                        <button data-filter="morning" class="filter-btn px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Morning (9AM-12PM)</button>
+                        <button data-filter="afternoon" class="filter-btn px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Afternoon (2PM-5PM)</button>
+                        <button data-filter="evening" class="filter-btn px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">Evening (6PM-9PM)</button>
+                    </div>
+                    
+                    <!-- Slots grid container -->
+                    <div id="slotsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[480px] overflow-y-auto pr-1">
+                        <!-- dynamic slot cards injected here -->
+                        <div class="col-span-full text-center py-10 text-gray-400">
+                            <div class="loading-spinner mx-auto mb-2"></div> Loading slots...
+                        </div>
+                    </div>
+                    
+                    <div class="mt-5 pt-3 text-center text-xs text-gray-400 flex justify-center gap-4">
+                        <span><i class="fas fa-circle text-green-500 text-[8px] align-middle mr-1"></i> Available</span>
+                        <span><i class="fas fa-circle text-red-400 text-[8px] align-middle mr-1"></i> Booked</span>
+                        <span><i class="fas fa-circle text-yellow-500 text-[8px] align-middle mr-1"></i> Selected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- toast container -->
+    <div id="toastRoot" class="toast-notify"></div>
+
+    <script>
+        // ------------------------------------------------------------
+        // MOCK DATABASE (In-memory + localStorage persistence)
+        // Slot data structure: { id, examName, date, startTime, endTime, capacity, bookedBy: [] }
+        // For simplicity, we use predefined exam slots.
+        // localStorage will store both slotBookings (booked student emails/ids mapping)
+        // and also track bookings per student.
+        // ------------------------------------------------------------
+        
+        // Initial slots dataset (7 days variety)
+        const INITIAL_SLOTS = [
+            { id: "s1", examName: "Mathematics – Final", date: "2025-05-12", startTime: "09:00", endTime: "12:00", capacity: 2, bookedStudents: [] },   // capacity 2
+            { id: "s2", examName: "Physics – Theory", date: "2025-05-12", startTime: "14:00", endTime: "17:00", capacity: 1, bookedStudents: [] },
+            { id: "s3", examName: "Data Structures", date: "2025-05-13", startTime: "09:00", endTime: "12:00", capacity: 2, bookedStudents: [] },
+            { id: "s4", examName: "Algorithms", date: "2025-05-13", startTime: "18:00", endTime: "21:00", capacity: 1, bookedStudents: [] },
+            { id: "s5", examName: "Database Systems", date: "2025-05-14", startTime: "14:00", endTime: "17:00", capacity: 2, bookedStudents: [] },
+            { id: "s6", examName: "Operating Systems", date: "2025-05-15", startTime: "09:00", endTime: "12:00", capacity: 1, bookedStudents: [] },
+            { id: "s7", examName: "Computer Networks", date: "2025-05-15", startTime: "18:00", endTime: "21:00", capacity: 2, bookedStudents: [] },
+            { id: "s8", examName: "Software Engineering", date: "2025-05-16", startTime: "14:00", endTime: "17:00", capacity: 1, bookedStudents: [] },
+        ];
+        
+        // Helper to load slots from localStorage or init
+        let examSlots = [];
+        // Store student bookings (array of booking objects) for UI
+        let currentStudentBookings = []; // { slotId, examName, date, startTime, endTime, studentEmail, studentName }
+        
+        // Utility: Save slots to localStorage
+        function persistSlots() {
+            localStorage.setItem("exam_slots_data", JSON.stringify(examSlots));
+        }
+        
+        function loadSlotsFromStorage() {
+            const stored = localStorage.getItem("exam_slots_data");
+            if (stored) {
+                examSlots = JSON.parse(stored);
+            } else {
+                examSlots = JSON.parse(JSON.stringify(INITIAL_SLOTS));
+                persistSlots();
+            }
+            // ensure every slot has bookedStudents array
+            examSlots.forEach(slot => {
+                if (!slot.bookedStudents) slot.bookedStudents = [];
+            });
+        }
+        
+        // Load student bookings from localStorage (key by email - for demo simplicity we track via email)
+        function loadStudentBookingsFromStorage() {
+            const bookingsStore = localStorage.getItem("student_bookings_map");
+            if (bookingsStore) {
+                // we need to rebuild currentStudentBookings based on active email? For simplicity we store all bookings globally
+                // but dashboard shows based on last session? we'll store globally all bookings under 'all_bookings'
+                const allBookings = localStorage.getItem("all_user_bookings");
+                if (allBookings) {
+                    currentStudentBookings = JSON.parse(allBookings);
+                } else {
+                    currentStudentBookings = [];
+                }
+            } else {
+                currentStudentBookings = [];
+            }
+            renderMyBookings();
+        }
+        
+        function persistAllBookings() {
+            localStorage.setItem("all_user_bookings", JSON.stringify(currentStudentBookings));
+        }
+        
+        // Helper: get bookings for a specific email (used for validation & display)
+        function getBookingsByEmail(email) {
+            return currentStudentBookings.filter(b => b.studentEmail === email);
+        }
+        
+        // Check if student already booked a slot (limit: max 2 slots per student)
+        function canStudentBookMore(email) {
+            const userBookings = getBookingsByEmail(email);
+            return userBookings.length < 2;
+        }
+        
+        // Check if student already booked this specific slot
+        function isSlotBookedByStudent(slotId, email) {
+            return currentStudentBookings.some(b => b.slotId === slotId && b.studentEmail === email);
+        }
+        
+        // Book a slot
+        function bookSlot(slotId, studentName, studentEmail, studentRoll) {
+            const slot = examSlots.find(s => s.id === slotId);
+            if (!slot) return { success: false, message: "Slot not found" };
+            
+            const currentBookedCount = slot.bookedStudents.length;
+            if (currentBookedCount >= slot.capacity) {
+                return { success: false, message: "Slot capacity full! Choose another slot." };
+            }
+            
+            // booking limit check per student
+            if (!canStudentBookMore(studentEmail)) {
+                return { success: false, message: "You have already booked 2 exam slots. Cannot book more." };
+            }
+            
+            // duplicate slot booking prevention
+            if (isSlotBookedByStudent(slotId, studentEmail)) {
+                return { success: false, message: "You have already booked this slot!" };
+            }
+            
+            // proceed
+            const bookingRecord = {
+                slotId: slot.id,
+                examName: slot.examName,
+                date: slot.date,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                studentName: studentName,
+                studentEmail: studentEmail,
+                studentRoll: studentRoll,
+                bookedAt: new Date().toISOString()
+            };
+            // add to slot bookedStudents
+            slot.bookedStudents.push({ email: studentEmail, name: studentName, roll: studentRoll });
+            // add to global bookings
+            currentStudentBookings.push(bookingRecord);
+            persistSlots();
+            persistAllBookings();
+            // re-render UI
+            renderSlotsGrid();
+            renderMyBookings();
+            return { success: true, message: `✅ Slot booked successfully for ${slot.examName} on ${slot.date}!` };
+        }
+        
+        // Cancel booking
+        function cancelBooking(slotId, studentEmail) {
+            // find slot
+            const slot = examSlots.find(s => s.id === slotId);
+            if (!slot) return false;
+            // remove from bookedStudents array
+            const initialLen = slot.bookedStudents.length;
+            slot.bookedStudents = slot.bookedStudents.filter(s => s.email !== studentEmail);
+            if (slot.bookedStudents.length === initialLen) return false;
+            // remove from global bookings
+            currentStudentBookings = currentStudentBookings.filter(b => !(b.slotId === slotId && b.studentEmail === studentEmail));
+            persistSlots();
+            persistAllBookings();
+            renderSlotsGrid();
+            renderMyBookings();
+            return true;
+        }
+        
+        // Helper to get slotTimeCategory for filter
+        function getSlotCategory(startTime) {
+            const hour = parseInt(startTime.split(":")[0]);
+            if (hour >= 6 && hour < 12) return "morning";
+            if (hour >= 12 && hour < 17) return "afternoon";
+            return "evening";
+        }
+        
+        // Render slots grid with filtering
+        let currentFilter = "all";
+        function renderSlotsGrid() {
+            const container = document.getElementById("slotsContainer");
+            if (!container) return;
+            
+            let filteredSlots = [...examSlots];
+            if (currentFilter !== "all") {
+                filteredSlots = examSlots.filter(slot => getSlotCategory(slot.startTime) === currentFilter);
+            }
+            
+            if (filteredSlots.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500"><i class="fas fa-calendar-times text-3xl mb-2 block"></i> No slots in this category</div>`;
+                return;
+            }
+            
+            // get current student email from form (if any filled), but we highlight selections based on global
+            const emailInput = document.getElementById("studentEmail");
+            const currentEmail = emailInput ? emailInput.value.trim() : "";
+            
+            const slotsHtml = filteredSlots.map(slot => {
+                const isFull = slot.bookedStudents.length >= slot.capacity;
+                let bookedByMe = currentEmail && isSlotBookedByStudent(slot.id, currentEmail);
+                let statusClass = "";
+                let statusText = "";
+                let buttonDisabled = false;
+                let buttonAction = "";
+                
+                if (bookedByMe) {
+                    statusClass = "border-yellow-400 bg-yellow-50/60 ring-1 ring-yellow-300";
+                    statusText = "✅ Booked by you";
+                    buttonDisabled = false; // cancel enabled
+                    buttonAction = `<button data-slot-id="${slot.id}" class="cancel-booking w-full mt-2 py-1.5 text-sm rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition flex items-center justify-center gap-1"><i class="fas fa-times-circle"></i> Cancel</button>`;
+                } else if (isFull) {
+                    statusClass = "border-red-200 bg-gray-50 opacity-75";
+                    statusText = "🔴 Fully Booked";
+                    buttonDisabled = true;
+                    buttonAction = `<button disabled class="w-full mt-2 py-1.5 text-sm rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed">Unavailable</button>`;
+                } else {
+                    statusClass = "border-green-200 hover:border-blue-300";
+                    statusText = `🟢 ${slot.capacity - slot.bookedStudents.length} seat(s) left`;
+                    buttonDisabled = false;
+                    buttonAction = `<button data-slot-id="${slot.id}" class="quick-book bg-blue-50 text-blue-700 hover:bg-blue-100 w-full mt-2 py-1.5 text-sm rounded-lg transition flex items-center justify-center gap-1"><i class="fas fa-bookmark"></i> Select Slot</button>`;
+                }
+                
+                return `
+                    <div class="slot-card rounded-xl border ${statusClass} bg-white/90 p-4 shadow-sm transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-md">${escapeHtml(slot.examName)}</h3>
+                                <div class="flex items-center text-xs text-gray-500 mt-1"><i class="far fa-calendar-alt mr-1 w-3"></i> ${slot.date}</div>
+                                <div class="flex items-center text-xs text-gray-500"><i class="far fa-clock mr-1 w-3"></i> ${slot.startTime} – ${slot.endTime}</div>
+                            </div>
+                            <span class="text-[11px] font-medium px-2 py-0.5 rounded-full ${isFull ? 'bg-red-100 text-red-700' : (bookedByMe ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700')}">${statusText}</span>
+                        </div>
+                        <div class="mt-2">
+                            ${buttonAction}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+            
+            container.innerHTML = slotsHtml;
+            
+            // attach event listeners to dynamic buttons (quick-book and cancel)
+            document.querySelectorAll(".quick-book").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const slotId = btn.getAttribute("data-slot-id");
+                    triggerBooking(slotId);
+                });
+            });
+            document.querySelectorAll(".cancel-booking").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const slotId = btn.getAttribute("data-slot-id");
+                    const email = document.getElementById("studentEmail").value.trim();
+                    if (!email) {
+                        showToast("Please enter your email first to cancel booking.", "warning");
+                        return;
+                    }
+                    if (cancelBooking(slotId, email)) {
+                        showToast("Booking cancelled successfully.", "info");
+                        renderMyBookings();
+                    } else {
+                        showToast("Could not cancel booking.", "error");
+                    }
+                });
+            });
+        }
+        
+        function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;});}
+        
+        function triggerBooking(slotId) {
+            const name = document.getElementById("studentName").value.trim();
+            const email = document.getElementById("studentEmail").value.trim();
+            const roll = document.getElementById("studentRoll").value.trim();
+            if (!name || !email) {
+                showToast("Please fill in Name and Email before booking a slot.", "error");
+                return;
+            }
+            if (!email.includes("@") || !email.includes(".")) {
+                showToast("Please enter a valid email address.", "error");
+                return;
+            }
+            const result = bookSlot(slotId, name, email, roll);
+            showToast(result.message, result.success ? "success" : "error");
+            if (result.success) {
+                // clear maybe not, but refresh input highlight
+                renderSlotsGrid();
+            }
+        }
+        
+        function renderMyBookings() {
+            const container = document.getElementById("myBookingsList");
+            if (!container) return;
+            const email = document.getElementById("studentEmail").value.trim();
+            if (!email) {
+                container.innerHTML = `<div class="text-gray-400 italic text-center py-2">Enter email to see your bookings</div>`;
+                return;
+            }
+            const userBookings = getBookingsByEmail(email);
+            if (userBookings.length === 0) {
+                container.innerHTML = `<div class="text-gray-400 italic text-center py-2">No bookings yet. Pick a slot!</div>`;
+                return;
+            }
+            const bookingsHtml = userBookings.map(b => `
+                <div class="bg-white rounded-lg p-2 shadow-sm border-l-4 border-blue-400 text-xs">
+                    <div class="flex justify-between">
+                        <span class="font-semibold">${escapeHtml(b.examName)}</span>
+                        <button data-cancel-slot="${b.slotId}" class="text-red-500 hover:text-red-700 text-[11px]"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                    <div class="text-gray-600">${b.date} ${b.startTime}-${b.endTime}</div>
+                </div>
+            `).join("");
+            container.innerHTML = bookingsHtml;
+            // attach cancel from mini list
+            document.querySelectorAll("[data-cancel-slot]").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const slotId = btn.getAttribute("data-cancel-slot");
+                    const email = document.getElementById("studentEmail").value.trim();
+                    if (email && cancelBooking(slotId, email)) {
+                        showToast("Booking removed", "info");
+                        renderMyBookings();
+                        renderSlotsGrid();
+                    } else {
+                        showToast("Cancellation failed", "error");
+                    }
+                });
+            });
+        }
+        
+        function showToast(msg, type = "success") {
+            const toastRoot = document.getElementById("toastRoot");
+            if (!toastRoot) return;
+            const bg = type === "success" ? "bg-green-600" : (type === "error" ? "bg-red-600" : "bg-blue-600");
+            const icon = type === "success" ? "fa-check-circle" : (type === "error" ? "fa-exclamation-circle" : "fa-info-circle");
+            const toastDiv = document.createElement("div");
+            toastDiv.className = `${bg} text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 mb-3`;
+            toastDiv.innerHTML = `<i class="fas ${icon}"></i><span class="text-sm font-medium">${msg}</span>`;
+            toastRoot.appendChild(toastDiv);
+            setTimeout(() => {
+                toastDiv.remove();
+            }, 3000);
+        }
+        
+        // add event listener on bookingForm
+        document.getElementById("bookingForm")?.addEventListener("submit", (e) => {
+            e.preventDefault();
+            showToast("Please click on a specific slot card to book.", "info");
+        });
+        
+        // filter logic
+        function initFilters() {
+            const filterBtns = document.querySelectorAll(".filter-btn");
+            filterBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    filterBtns.forEach(b => b.classList.remove("active-filter", "bg-blue-600", "text-white"));
+                    btn.classList.add("active-filter", "bg-blue-600", "text-white");
+                    currentFilter = btn.getAttribute("data-filter");
+                    renderSlotsGrid();
+                });
+            });
+        }
+        
+        // re-render when email updates for dynamic personalization
+        document.getElementById("studentEmail")?.addEventListener("input", () => {
+            renderMyBookings();
+            renderSlotsGrid();
+        });
+        document.getElementById("studentName")?.addEventListener("input", () => renderSlotsGrid());
+        
+        // initial load
+        loadSlotsFromStorage();
+        loadStudentBookingsFromStorage();
+        renderSlotsGrid();
+        renderMyBookings();
+        initFilters();
+    </script>
+</body>
+</html>
